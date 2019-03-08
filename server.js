@@ -99,13 +99,12 @@ app.get('/', function (req, res) {
 app.get('/user/:userId', function (req, res) {
     req.models.Users.one({id: req.params.userId}, function (err, user) {
         if (err) {
-            res.writeHead(404, {"Content-Type": "application/json"});
+            res.status(500).send(err.toString());
             throw err;
         }
         else {
             if (user == null) {
-                //res.writeHead(404, {"Content-Type": "application/json"});
-                res.send("");
+                res.status(404).send([]);
             }
             else {
                 res.send(user);
