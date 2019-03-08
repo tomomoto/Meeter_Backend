@@ -1,0 +1,20 @@
+{
+  "name": "meeet",
+  "version": "1.0.0",
+  "description": "meeetproject",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Georgy Lebedik",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.16.4",
+    "googlemaps": "*",
+    "mysql": "^2.16.0",
+    "npm": "^6.9.0",
+    "orm": "^5.0.4",
+    "socket.io": "^2.2.0",
+    "winston": "^3.2.1"
+  }
+}
