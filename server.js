@@ -47,7 +47,7 @@ function defineEvents(models, db) {
         id: {type: 'serial', key: true},
         name: String,
         description: String,
-        creator_id: {type: "integer"},
+        creator_id: String,
         created: String,
         starting: String,
         ending: String,
@@ -108,6 +108,42 @@ app.get('/user/:userId', function (req, res) {
             }
             else {
                 res.send(user);
+            }
+        }
+    });
+});
+
+
+app.get('/event/:eventId', function (req, res) {
+    req.models.Events.one({id: req.params.eventId}, function (err, event) {
+        if (err) {
+            res.status(500).send(err.toString());
+            throw err;
+        }
+        else {
+            if (event == null) {
+                res.status(404).send([]);
+            }
+            else {
+                res.send(event);
+            }
+        }
+    });
+});
+
+
+app.get('/events/createdBy/:userId', function (req, res) {
+    req.models.Events.find({creator_id: req.params.userId}, function (err, events) {
+        if (err) {
+            res.status(500).send(err.toString());
+            throw err;
+        }
+        else {
+            if (events == null) {
+                res.status(404).send([]);
+            }
+            else {
+                res.send(events);
             }
         }
     });
