@@ -3,6 +3,7 @@ let app = express();
 let server = require('http').createServer(app);
 let io = require('socket.io').listen(server);
 let orm = require('orm');
+let uuid = require('uuid');
 
 users = [];
 connections = [];
@@ -15,8 +16,8 @@ connections = [];
 //server.listen(process.env.PORT || 3000, '178.252.118.52');
 let port = process.env.PORT;
 if (process.env.PORT == null)
-    port = 3000;
-//var host = '0.0.0.0';
+    port = 80;
+//const host = '0.0.0.0';
 //var host = '178.252.118.52';
 const host = '10.137.57.156';
 server.listen(port, host);
@@ -62,6 +63,7 @@ function defineUsers(models, db) {
     let userModel = {
         id: {type: 'serial', key: true},
         login: String,
+        password: String,
         name: String,
         surname: String,
         gender: ["male", "female"],
@@ -268,17 +270,43 @@ io.sockets.on('connection', function (socket) {
 
     };
 
-    //TODO USERREG
-    let onUserRegistrationCallback = function (newUserData) {
+    let onUserRegistrationCallback = function (data) {
+        console.log("Registration attempt: " + JSON.stringify(data));
+        console.log("Registration event: " + data.login + ' ' + data.password);
 
+        if (!checkIncomingData(data)) {
+            socket.emit("FailedRegistrationEvent");
+        }
+        socket.models.Users.one({login: data.login}, function (err, user) {
+            if (err) {
+                throw err;
+            }
+            if (user == null) {
+                console.log("Free user login: %s %s", data.login);
+
+                socket.models.Users.create({
+                    id: uuid.v4(), name: data.name, surname: data.surname, gender: data.gender,
+                    info: data.info, birthday: data.birthday, login: data.login, password: data.password
+                }, function (err, user) {
+                    if (err) {
+                        throw err;
+                    }
+                    socket.emit("SuccessfulRegistrationEvent", user.id);
+                });
+
+            } else {
+                console.log("User with current login already exist. Login [%s], userId [%s]", user.login, user.id);
+                socket.emit("FailedRegistrationEvent", data);
+            }
+        });
     };
 
     let initialize = function (socket) {
         socket.on('disconnect', onSocketDisconnectedCallback);
+        socket.on('register', onUserRegistrationCallback);
         socket.on('login', onUserLoginCallback);
         socket.on('EventCreation', onEventCreationCallback);
         socket.on('FindEvents', onFindEventsCallback);
-        socket.on('UserRegistration', onUserRegistrationCallback);
         connections.push(socket);
         console.log('Connected: %s sockets connected', connections.length);
     };
