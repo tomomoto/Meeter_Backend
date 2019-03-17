@@ -218,7 +218,7 @@ io.sockets.on('connection', function (socket) {
                         // var formated_date = now.format("yyyy-mm-dd");
                         //users[0].birthday = formattedBirthDay;
 
-                        socket.usr = user.id;
+                        socket.userId = user.id;
                         socket.emit("RightLoginEvent", user);
                     }
                 }
@@ -258,16 +258,34 @@ io.sockets.on('connection', function (socket) {
                             eventList.push(events[i]);
                         console.log(dist);
                     }
-                    console.log(socket.usr);
+                    console.log(socket.userId);
                     socket.emit("FoundEvents", eventList);
                 }
             }
         });
     };
 
-    //TODO Event creation
-    let onEventCreationCallback = function (newEventData) {
+    let onEventCreationCallback = function (data) {
+        console.log("New event creation  attempt: %s, userId: %s", JSON.stringify(data), socket.userId);
+        let city = "";
 
+        let today = new Date();
+        today = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+        console.log("Today: %s", today);
+
+        socket.models.Events.create({
+            id: uuid.v4(), name: data.name, description: data.description, creator_id: socket.userId,
+            created: today,
+            starting: data.starting.length === 0 ? null : data.starting,
+            ending: data.ending.length === 0 ? null : data.ending,
+            city: city, latitude: data.latitude, longitude: data.longitude
+        }, function (err, event) {
+            if (err) {
+                socket.emit("FailureEventCreation");
+                throw err;
+            }
+            socket.emit("SuccessfulEventCreation", event.id);
+        });
     };
 
     let onUserRegistrationCallback = function (data) {
@@ -282,7 +300,7 @@ io.sockets.on('connection', function (socket) {
                 throw err;
             }
             if (user == null) {
-                console.log("Free user login: %s %s", data.login);
+                console.log("Free user login: %s", data.login);
 
                 socket.models.Users.create({
                     id: uuid.v4(), name: data.name, surname: data.surname, gender: data.gender,
@@ -291,6 +309,7 @@ io.sockets.on('connection', function (socket) {
                     if (err) {
                         throw err;
                     }
+                    socket.userId = user.id;
                     socket.emit("SuccessfulRegistrationEvent", user.id);
                 });
 
@@ -305,7 +324,7 @@ io.sockets.on('connection', function (socket) {
         socket.on('disconnect', onSocketDisconnectedCallback);
         socket.on('register', onUserRegistrationCallback);
         socket.on('login', onUserLoginCallback);
-        socket.on('EventCreation', onEventCreationCallback);
+        socket.on('createNewEvent', onEventCreationCallback);
         socket.on('FindEvents', onFindEventsCallback);
         connections.push(socket);
         console.log('Connected: %s sockets connected', connections.length);
